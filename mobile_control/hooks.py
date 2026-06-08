@@ -1,8 +1,8 @@
 app_name = "mobile_control"
 app_title = "Mobile Control"
-app_publisher = "DHWANI RIS"
-app_description = "Mobile Control - Custom Frappe Application"
-app_email = "frappeteam@dhwaniris.com"
+app_publisher = "Quantbit"
+app_description = "Mobile Control"
+app_email = "quantbit@example.com"
 app_license = "mit"
 
 # Apps
@@ -70,6 +70,9 @@ app_license = "mit"
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
 
+# automatically load and sync documents of this doctype from downstream apps
+# importable_doctypes = [doctype_1]
+
 # Jinja
 # ----------
 
@@ -107,6 +110,12 @@ app_license = "mit"
 # before_app_uninstall = "mobile_control.utils.before_app_uninstall"
 # after_app_uninstall = "mobile_control.utils.after_app_uninstall"
 
+# Build
+# ------------------
+# To hook into the build process
+
+# after_build = "mobile_control.build.after_build"
+
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
@@ -125,14 +134,6 @@ app_license = "mit"
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
-# DocType Class
-# ---------------
-# Override standard doctype classes
-
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
-
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -144,48 +145,47 @@ app_license = "mit"
 # 		"on_trash": "method"
 # 	}
 # }
-doc_events = {
-	"DocType": {
-		"on_update": "mobile_control.mobile_control.doctype.mobile_configuration.mobile_configuration.update_doctype_meta_modified",
-	},
-	"Custom Field": {
-		"on_update": "mobile_control.mobile_control.doctype.mobile_configuration.mobile_configuration.update_doctype_meta_modified",
-		"on_trash": "mobile_control.mobile_control.doctype.mobile_configuration.mobile_configuration.update_doctype_meta_modified",
-	},
-	"Property Setter": {
-		"on_update": "mobile_control.mobile_control.doctype.mobile_configuration.mobile_configuration.update_doctype_meta_modified",
-		"on_trash": "mobile_control.mobile_control.doctype.mobile_configuration.mobile_configuration.update_doctype_meta_modified",
-	},
-}
 
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	"daily": ["mobile_control.tasks.cleanup_mobile_refresh_tokens"],
-}
+# scheduler_events = {
+# 	"all": [
+# 		"mobile_control.tasks.all"
+# 	],
+# 	"daily": [
+# 		"mobile_control.tasks.daily"
+# 	],
+# 	"hourly": [
+# 		"mobile_control.tasks.hourly"
+# 	],
+# 	"weekly": [
+# 		"mobile_control.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"mobile_control.tasks.monthly"
+# 	],
+# }
 
 # Testing
 # -------
 
 # before_tests = "mobile_control.install.before_tests"
 
+# Extend DocType Class
+# ------------------------------
+#
+# Specify custom mixins to extend the standard doctype controller.
+# extend_doctype_class = {
+# 	"Task": "mobile_control.custom.task.CustomTaskMixin"
+# }
+
 # Overriding Methods
 # ------------------------------
 #
-override_whitelisted_methods = {
-	"mobile_auth.login": "mobile_control.api.api_auth.login",
-	"mobile_auth.logout": "mobile_control.api.api_auth.logout",
-	"mobile_auth.send_login_otp": "mobile_control.api.api_auth.send_mobile_otp",
-	"mobile_auth.verify_login_otp": "mobile_control.api.api_auth.verify_mobile_otp",
-	"mobile_auth.refresh_token": "mobile_control.api.api_auth.refresh_token",
-	"mobile_auth.app_status": "mobile_control.api.api_auth.get_mobile_app_status",
-	"mobile_auth.configuration": "mobile_control.api.api_auth.get_mobile_configuration",
-	"mobile_auth.permissions": "mobile_control.api.api_auth.get_user_permissions",
-	"mobile_auth.get_translations": "mobile_control.api.api_auth.get_translations",
-	"mobile_auth.get_social_login_providers": "mobile_control.api.api_auth.get_social_login_providers",
-	"mobile_auth.get_social_authorize_url": "mobile_control.api.api_auth.get_social_authorize_url",
-}
+# override_whitelisted_methods = {
+# 	"frappe.desk.doctype.event.event.get_events": "mobile_control.event.get_events"
+# }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -205,7 +205,7 @@ override_whitelisted_methods = {
 
 # Request Events
 # ----------------
-before_request = ["mobile_control.api.jwt_auth.token_auth_middleware"]
+# before_request = ["mobile_control.utils.before_request"]
 # after_request = ["mobile_control.utils.after_request"]
 
 # Job Events
@@ -256,6 +256,15 @@ before_request = ["mobile_control.api.jwt_auth.token_auth_middleware"]
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
-# Fixtures
-# --------
-fixtures = [{"doctype": "Role", "filters": {"name": ["in", ["Mobile User"]]}}]
+def assign_mobile_user_role(doc, method=None):
+	if doc.name not in ("Administrator", "Guest"):
+		if hasattr(doc, "append_roles"):
+			doc.append_roles("Mobile User")
+		else:
+			doc.append("roles", {"role": "Mobile User"})
+
+doc_events = {
+	"User": {
+		"before_insert": "mobile_control.hooks.assign_mobile_user_role",
+	},
+}
