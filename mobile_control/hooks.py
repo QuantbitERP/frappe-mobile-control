@@ -146,6 +146,22 @@ app_license = "mit"
 # 	}
 # }
 
+
+def assign_mobile_user_role(doc, method=None):
+	if doc.name not in ("Administrator", "Guest"):
+		if hasattr(doc, "append_roles"):
+			doc.append_roles("Mobile User")
+		else:
+			doc.append("roles", {"role": "Mobile User"})
+
+doc_events = {
+	"User": {
+		"before_insert": "mobile_control.hooks.assign_mobile_user_role",
+	},
+}
+
+
+
 # Scheduled Tasks
 # ---------------
 
