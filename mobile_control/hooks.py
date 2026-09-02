@@ -174,6 +174,7 @@ scheduler_events = {
 	"daily": [
 		"mobile_control.tasks.cleanup_mobile_refresh_tokens",
 		"mobile_control.tasks.purge_mobile_error_logs",
+		"mobile_control.tasks.cleanup_mobile_login_events",
 	],
 }
 
@@ -181,6 +182,29 @@ scheduler_events = {
 # -------
 
 # before_tests = "mobile_control.install.before_tests"
+
+
+# Custom Code changes 
+
+# Custom hook for Automatically assigning user Mobile User role 
+
+def assign_mobile_user_role(doc, method=None):
+	if doc.name not in ("Administrator", "Guest"):
+		if hasattr(doc, "append_roles"):
+			doc.append_roles("Mobile User")
+		else:
+			doc.append("roles", {"role": "Mobile User"})
+
+doc_events = {
+	"User": {
+		"before_insert": "mobile_control.hooks.assign_mobile_user_role",
+	},
+}
+
+
+
+
+
 
 # Overriding Methods
 # ------------------------------
@@ -223,7 +247,7 @@ override_whitelisted_methods = {
 # Request Events
 # ----------------
 before_request = ["mobile_control.api.jwt_auth.token_auth_middleware"]
-# after_request = ["mobile_control.utils.after_request"]
+after_request = ["mobile_control.api.helpers.client_log.touch_last_seen_after_request"]
 
 # Job Events
 # ----------
