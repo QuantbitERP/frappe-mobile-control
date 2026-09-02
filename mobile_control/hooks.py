@@ -183,6 +183,29 @@ scheduler_events = {
 
 # before_tests = "mobile_control.install.before_tests"
 
+
+# Custom Code changes 
+
+# Custom hook for Automatically assigning user Mobile User role 
+
+def assign_mobile_user_role(doc, method=None):
+	if doc.name not in ("Administrator", "Guest"):
+		if hasattr(doc, "append_roles"):
+			doc.append_roles("Mobile User")
+		else:
+			doc.append("roles", {"role": "Mobile User"})
+
+doc_events = {
+	"User": {
+		"before_insert": "mobile_control.hooks.assign_mobile_user_role",
+	},
+}
+
+
+
+
+
+
 # Overriding Methods
 # ------------------------------
 #
